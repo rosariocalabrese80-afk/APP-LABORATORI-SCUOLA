@@ -84,3 +84,15 @@ print('Persistenza verificata dopo nuovo processo WSGI')
                                 env={**os.environ, 'LAB_DB': str(app.DB)},
                                 capture_output=True, text=True, check=True)
         self.assertIn('Persistenza verificata', result.stdout)
+
+    def test_multiple_hours_wsgi(self):
+        login = self.request('/api/login', {'username':'docente','password':'password-test-123'})
+        cookie=login['headers']['Set-Cookie'].split(';')[0]
+        data={**self.fixture.data,'date':'2026-11-02','hours':[8,10]}
+        created=self.request('/api/bookings',data,cookie)
+        self.assertEqual(created['status'],201)
+        self.assertEqual(len(json.loads(created['body'])['ids']),2)
+        failed=self.request('/api/bookings',{**data,'hours':[9,10,11]},cookie)
+        self.assertEqual(failed['status'],400)
+        rows=json.loads(self.request('/api/data',cookie=cookie)['body'])['bookings']
+        self.assertEqual(len(rows),2)

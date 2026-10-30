@@ -75,7 +75,7 @@ def init():
     prepare_setup()
 
 
-def book(data, user, booking_id=None):
+def _book(db, data, user, booking_id=None):
     teacher = user['name']
     school_class = str(data.get('school_class', '')).strip()
     notes = str(data.get('notes', '')).strip()
@@ -97,21 +97,45 @@ def book(data, user, booking_id=None):
     if not today() <= start.date() <= month_shift(today(), 1):
         raise ValueError('Puoi prenotare da oggi fino a un mese di calendario in avanti.')
     start, end = start.isoformat(timespec='minutes'), end.isoformat(timespec='minutes')
+    if not db.execute('SELECT id FROM labs WHERE id=? AND active=1', (lab,)).fetchone():
+        raise ValueError('Laboratorio inesistente.')
+    if db.execute('SELECT id FROM bookings WHERE lab=? AND start<? AND end>? AND id!=?', (lab, end, start, booking_id or -1)).fetchone():
+        raise ValueError('Il laboratorio è già prenotato in questo intervallo.')
+    if booking_id is not None:
+        if not db.execute('SELECT 1 FROM bookings WHERE id=?', (booking_id,)).fetchone():
+            raise ValueError('Prenotazione inesistente.')
+        db.execute('UPDATE bookings SET lab=?,teacher=?,school_class=?,start=?,end=?,notes=?,user_id=? WHERE id=?',
+                   (lab,teacher,school_class,start,end,notes,user['id'],booking_id))
+        return booking_id
+    cursor = db.execute('INSERT INTO bookings(lab,teacher,school_class,start,end,notes,user_id) VALUES(?,?,?,?,?,?,?)',
+                        (lab, teacher, school_class, start, end, notes, user['id']))
+    return cursor.lastrowid
+
+
+def book(data, user, booking_id=None):
     with connect() as db:
         db.execute('BEGIN IMMEDIATE')
-        if not db.execute('SELECT id FROM labs WHERE id=? AND active=1', (lab,)).fetchone():
-            raise ValueError('Laboratorio inesistente.')
-        if db.execute('SELECT id FROM bookings WHERE lab=? AND start<? AND end>? AND id!=?', (lab, end, start, booking_id or -1)).fetchone():
-            raise ValueError('Il laboratorio è già prenotato in questo intervallo.')
-        if booking_id is not None:
-            if not db.execute('SELECT 1 FROM bookings WHERE id=?', (booking_id,)).fetchone():
-                raise ValueError('Prenotazione inesistente.')
-            db.execute('UPDATE bookings SET lab=?,teacher=?,school_class=?,start=?,end=?,notes=?,user_id=? WHERE id=?',
-                       (lab,teacher,school_class,start,end,notes,user['id'],booking_id))
-            return booking_id
-        cursor = db.execute('INSERT INTO bookings(lab,teacher,school_class,start,end,notes,user_id) VALUES(?,?,?,?,?,?,?)',
-                            (lab, teacher, school_class, start, end, notes, user['id']))
-        return cursor.lastrowid
+        return _book(db, data, user, booking_id)
+
+
+def book_many(data, user, booking_id=None):
+    hours = data.get('hours')
+    if (not isinstance(hours,list) or not 1 <= len(hours) <= 6
+            or any(type(hour) is not int or hour not in range(8,14) for hour in hours)
+            or len(set(hours)) != len(hours)):
+        raise ValueError('Seleziona almeno un’ora valida, senza duplicati, tra le 08:00 e le 14:00.')
+    if booking_id is not None and len(hours) != 1:
+        raise ValueError('Per modificare una prenotazione seleziona una sola ora.')
+    day = data.get('date','')
+    if not isinstance(day,str):
+        raise ValueError('Data non valida.')
+    with connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        ids = []
+        for hour in sorted(hours):
+            slot = {**data,'start':f'{day}T{hour:02d}:00','end':f'{day}T{hour+1:02d}:00'}
+            ids.append(_book(db,slot,user,booking_id))
+        return ids
 
 
 def create_user(username, name, password, role="teacher", status="active"):
@@ -381,7 +405,11 @@ class Handler(BaseHTTPRequestHandler):
                         target = db.execute("SELECT id,name FROM users WHERE id=? AND status='active'",(int(data.get('user_id',0)),)).fetchone()
                     if not target:
                         raise ValueError('Scegli un docente attivo.')
-                    book(data,target,int(data['id']) if data.get('id') else None)
+                    booking_id = int(data['id']) if data.get('id') else None
+                    if 'hours' in data:
+                        book_many(data,target,booking_id)
+                    else:
+                        book(data,target,booking_id)
                 else:
                     self.reply(404, {'error':'Operazione inesistente.'})
                     return
@@ -398,7 +426,10 @@ class Handler(BaseHTTPRequestHandler):
                 manage_user({'id':user['id'],'action':'password','password':password},user)
                 self.reply(200, {'ok':True},self.cookie('',0))
             elif self.path == '/api/bookings':
-                self.reply(201, {'id': book(data, user)})
+                if 'hours' in data:
+                    self.reply(201, {'ids': book_many(data, user)})
+                else:
+                    self.reply(201, {'id': book(data, user)})
             else:
                 self.reply(404, {'error': 'Operazione inesistente.'})
         except sqlite3.IntegrityError:

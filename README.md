@@ -39,7 +39,7 @@ Le autorizzazioni sono controllate anche dal server. I docenti attivi vedono l�
 
 Catalogo iniziale: Informatica aula 133; STEM/Coding aula 132; Arte aula 131; Informatica carrello mobile n. 1; Informatica carrello mobile n. 2. Il catalogo viene inizializzato una volta: le modifiche amministrative sono conservate ai successivi avvii.
 
-Prenotazioni di un’ora intera, lunedì–venerdì, nelle fasce 08–09, 09–10, 10–11, 11–12, 12–13, 13–14. Per più ore consecutive inserire prenotazioni distinte. Sono bloccate frazioni, sovrapposizioni e fine settimana; festività e chiusure straordinarie non sono configurate.
+Prenotazioni di un’ora intera, lunedì–venerdì, nelle fasce 08–09, 09–10, 10–11, 11–12, 12–13, 13–14. Il modulo permette di spuntare più fasce orarie dello stesso giorno, anche non consecutive. Un solo salvataggio crea una prenotazione distinta per ogni ora. Le ore già occupate sono disabilitate; il server ricontrolla la disponibilità al salvataggio e, in caso di conflitto su una qualsiasi ora, non salva nessuna delle ore selezionate. La modifica amministrativa riguarda una prenotazione alla volta. Sono bloccate frazioni, sovrapposizioni e fine settimana; festività e chiusure straordinarie non sono configurate.
 
 La data è quella italiana (`Europe/Rome`). Si può prenotare da oggi fino allo stesso giorno del mese successivo incluso. Se quel giorno non esiste si usa l’ultimo del mese. Non si inseriscono prenotazioni retroattive.
 
