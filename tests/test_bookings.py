@@ -117,3 +117,21 @@ class BookingTests(unittest.TestCase):
         with app.connect() as db:
             row=db.execute('SELECT start FROM bookings WHERE id=?',(ident,)).fetchone()
             self.assertEqual(row['start'],'2026-11-02T10:00')
+
+    def test_concurrent_teachers_cannot_double_book(self):
+        from concurrent.futures import ThreadPoolExecutor
+        app.create_user('secondo','Secondo docente','abcdef')
+        data={**self.data,'date':'2026-11-02','hours':[8,10]}
+        def reserve(user):
+            try:
+                app.book_many(data,user)
+                return 'saved'
+            except ValueError:
+                return 'conflict'
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(reserve,[self.user,{'id':2,'name':'Secondo docente'}]))
+        self.assertCountEqual(results,['saved','conflict'])
+        with app.connect() as db:
+            rows=db.execute('SELECT user_id FROM bookings').fetchall()
+            self.assertEqual(len(rows),2)
+            self.assertEqual(len({r['user_id'] for r in rows}),1)
