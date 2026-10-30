@@ -64,3 +64,11 @@ I test usano database temporanei e controllano persistenza, orari, finestra temp
 ## Accesso dalla scuola e da casa
 
 Per l’hosting WSGI con database fuori dalla cartella dei sorgenti, seguire [PYTHONANYWHERE.md](PYTHONANYWHERE.md). Non sono necessari un server sempre acceso a scuola o porte aperte nel router. `wsgi.py` espone l’app senza avviare il server di sviluppo. `backup.py` crea copie SQLite consistenti e ne verifica l’integrità; non sovrascrive copie già esistenti.
+
+## Calendario settimanale e mensile
+
+Dopo l’accesso, il pulsante **Calendario settimana e mese** è visibile in alto nella schermata principale. La settimana mostra tutti e sette i giorni e le sei fasce 08–14, con tutte le prenotazioni dei diversi laboratori anche nella stessa ora. La vista mese mostra ogni giorno e tutte le sue prenotazioni, inclusi i giorni adiacenti necessari a completare le settimane. Un filtro indipendente permette di scegliere un laboratorio; i colori e la legenda distinguono gli spazi. Ogni prenotazione mostra orario, laboratorio, docente e classe. Cliccando si aprono i dettagli; dal dettaglio si può aprire quel giorno nell’agenda per le operazioni già autorizzate.
+
+Sono disponibili precedente/successivo, Oggi, scelta data e Aggiorna. Il calendario usa gli stessi dati dell’agenda e non estende il periodo di conservazione: i giorni fuori dalla finestra disponibile sono indicati esplicitamente. Il riepilogo conta le prenotazioni della settimana o del mese selezionato, escludendo i giorni adiacenti di altri mesi. Sui telefoni la griglia scorre orizzontalmente. L’accesso rimane riservato agli utenti attivi.
+
+La verifica opzionale del calendario nel browser è in `tests/browser_calendar.py`: richiede Playwright e Chromium nell’ambiente di sviluppo, senza aggiungere dipendenze al server. Si esegue con `python3 tests/browser_calendar.py` e usa esclusivamente un database temporaneo.
