@@ -140,3 +140,11 @@ Il modulo di cambio password è stato spostato qui dalla pagina principale: rich
 Per gli amministratori il profilo include un riepilogo delle autorizzazioni, il numero di iscritti in attesa e di amministratori attivi, il richiamo alla protezione dell’ultimo amministratore e il collegamento ad Amministrazione. Nessun dato aggiuntivo viene richiesto e non sono necessarie migrazioni del database.
 
 La prova opzionale `python3 tests/browser_profile.py` verifica i profili docente e amministratore, la visualizzazione dei soli dati personali, i collegamenti, il cambio password, la revoca delle altre sessioni e la vista mobile.
+
+## Notifiche iscrizioni in attesa
+
+Gli amministratori vedono un numerino su **Amministrazione** e sul menu **Iscrizioni e permessi docenti**. Il numero rappresenta gli account attualmente in attesa di approvazione, non le richieste semplicemente non lette: aprire il menu non lo cancella. Approvando, escludendo o eliminando una richiesta il conteggio diminuisce; quando arriva a zero il numerino scompare. Gli account attivi o esclusi non vengono contati.
+
+Il conteggio si aggiorna dopo le operazioni amministrative, ogni 30 secondi mentre la pagina è visibile e quando si torna alla scheda o alla pagina principale. La verifica periodica scarica soltanto il conteggio, tramite un’API riservata agli amministratori. I docenti e gli utenti non autenticati non possono consultarlo.
+
+La prova opzionale `python3 tests/browser_registration_notifications.py` verifica i due numerini, l’aggiornamento automatico dopo una registrazione da un’altra sessione, approvazione ed eliminazione, assenza completa degli indicatori a zero, protezione dalle risposte obsolete, vista mobile e accesso riservato.

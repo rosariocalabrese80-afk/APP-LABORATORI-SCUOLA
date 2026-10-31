@@ -399,6 +399,16 @@ class Handler(BaseHTTPRequestHandler):
             with connect() as db:
                 complete = bool(db.execute("SELECT 1 FROM settings WHERE key='setup_complete'").fetchone())
             self.reply(200, {'required':not complete})
+        elif self.path == '/api/admin/notifications':
+            user = self.require_user()
+            if user is None:
+                return
+            if user['role'] != 'admin':
+                self.reply(403, {'error': 'Accesso riservato agli amministratori.'})
+                return
+            with connect() as db:
+                count = db.execute("SELECT count(*) FROM users WHERE status='pending'").fetchone()[0]
+            self.reply(200, {'pending_registrations': count})
         elif self.path == '/api/admin':
             user = self.require_user()
             if user is None:

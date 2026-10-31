@@ -123,6 +123,24 @@ class PlanningTests(unittest.TestCase):
             db.execute("UPDATE users SET status='suspended' WHERE id=1")
         self.assertEqual(self.request('/api/report',cookie=self.teacher)['status'],401)
 
+    def test_pending_notifications_permissions_and_counts(self):
+        endpoint = '/api/admin/notifications'
+        self.assertEqual(self.request(endpoint)['status'], 401)
+        self.assertEqual(self.request(endpoint, cookie=self.teacher)['status'], 403)
+        self.assertEqual(self.body(self.request(endpoint, cookie=self.admin)), {'pending_registrations':0})
+        for letter in 'abc':
+            response = self.request('/api/register', dict(email=letter+'@example.org', name='Richiesta '+letter, password='abcdef', confirm_password='abcdef'))
+            self.assertEqual(response['status'], 201)
+        app.create_user('excluded@example.org','Escluso','abcdef',status='suspended')
+        result = self.request(endpoint, cookie=self.admin)
+        self.assertEqual(result['headers']['Cache-Control'], 'no-store')
+        self.assertEqual(self.body(result), {'pending_registrations':3})
+        with app.connect() as db:
+            identities = {r['username']:r['id'] for r in db.execute("SELECT id,username FROM users WHERE status='pending'")}
+        for email,action,expected in [('a@example.org','approve',2),('b@example.org','suspend',1),('c@example.org','delete',0)]:
+            self.assertEqual(self.request('/api/admin/users', dict(id=identities[email], action=action), self.admin)['status'], 200)
+            self.assertEqual(self.body(self.request(endpoint, cookie=self.admin)), {'pending_registrations':expected})
+
     def test_profile_is_personal_and_password_revokes_all_sessions(self):
         import time
         profile = self.body(self.request('/api/data', cookie=self.teacher))['user']

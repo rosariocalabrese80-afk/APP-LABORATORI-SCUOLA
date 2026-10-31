@@ -40,7 +40,7 @@ with tempfile.TemporaryDirectory() as folder:
             expect(page.locator('#rulesPanel')).to_be_hidden()
             expect(page.locator('#reportPanel')).to_be_hidden()
             expect(page.locator('#adminView')).to_have_attribute('aria-pressed','true')
-            expect(page.locator('#adminUsers > summary')).to_have_text('Iscrizioni e permessi docenti')
+            expect(page.locator('#adminUsers > summary')).to_contain_text('Iscrizioni e permessi docenti')
             assert not page.locator('#adminUsers').evaluate('el=>el.open')
             expect(page.locator('#userSearch')).to_be_hidden()
             page.locator('#adminUsers > summary').click()
