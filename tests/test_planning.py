@@ -123,6 +123,28 @@ class PlanningTests(unittest.TestCase):
             db.execute("UPDATE users SET status='suspended' WHERE id=1")
         self.assertEqual(self.request('/api/report',cookie=self.teacher)['status'],401)
 
+    def test_profile_is_personal_and_password_revokes_all_sessions(self):
+        import time
+        profile = self.body(self.request('/api/data', cookie=self.teacher))['user']
+        self.assertEqual(set(profile), {'id','username','name','role','status','session_expires'})
+        self.assertEqual(profile['username'], 'docente')
+        self.assertEqual(profile['role'], 'teacher')
+        self.assertGreater(profile['session_expires'], int(time.time()))
+        other = self.body(self.request('/api/data', cookie=self.other))['user']
+        self.assertEqual(other['username'], 'other@example.org')
+        second_session = self.login('docente', 'password-test-123')
+        wrong = self.request('/api/password', dict(current_password='wrong', password='new-password', confirm_password='new-password'), self.teacher)
+        self.assertEqual(wrong['status'], 400)
+        self.assertEqual(self.request('/api/data', cookie=second_session)['status'], 200)
+        changed = self.request('/api/password', dict(current_password='password-test-123', password='new-password', confirm_password='new-password', role='admin'), self.teacher)
+        self.assertEqual(changed['status'], 200)
+        self.assertEqual(self.request('/api/data', cookie=self.teacher)['status'], 401)
+        self.assertEqual(self.request('/api/data', cookie=second_session)['status'], 401)
+        new_session = self.login('docente', 'new-password')
+        after = self.body(self.request('/api/data', cookie=new_session))['user']
+        self.assertEqual(after['role'], 'teacher')
+        self.assertEqual(self.request('/api/data', cookie=self.admin)['status'], 200)
+
     def test_pdf_pagination_and_offsets(self):
         raw=reports.pdf_document(['Riga è (test) \\ '+str(n) for n in range(140)])
         self.assertIn(b'/Count 3',raw)

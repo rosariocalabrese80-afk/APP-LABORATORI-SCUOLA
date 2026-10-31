@@ -311,7 +311,7 @@ class Handler(BaseHTTPRequestHandler):
         except (KeyError, ValueError, CookieError):
             return None
         with connect() as db:
-            return db.execute("SELECT u.id,u.name,u.role,u.status FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token=? AND s.expires>? AND u.status='active'",
+            return db.execute("SELECT u.id,u.username,u.name,u.role,u.status,s.expires AS session_expires FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token=? AND s.expires>? AND u.status='active'",
                               (hashlib.sha256(token.encode()).hexdigest(), int(time.time()))).fetchone()
 
     def require_user(self):

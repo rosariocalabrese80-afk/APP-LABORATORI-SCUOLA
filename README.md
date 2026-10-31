@@ -97,7 +97,7 @@ La suite standard include i test di documenti, versionamento, permessi, integrit
 
 ## Ordine della schermata principale
 
-Dopo l’accesso, la prima area operativa è **Prenotazioni e agenda**, con il modulo di prenotazione e l’elenco. L’amministrazione si apre dal pulsante **Amministrazione**, accanto a **Regolamenti** nella navigazione principale, visibile soltanto agli amministratori. Il pannello non compare sotto le prenotazioni. Al suo interno **Iscrizioni e permessi docenti** è una sezione inizialmente chiusa ed espandibile, con ricerca, tutte le azioni di gestione e il sottomenu **Crea un amministratore o docente**. Anche **Gestisci laboratori** usa lo stesso riquadro espandibile degli altri menu amministrativi. Il cambio password resta nella pagina delle prenotazioni. Nessun riquadro o download del regolamento compare dentro Prenotazioni e agenda: indice e documento completo si trovano soltanto nella sezione Regolamenti, raggiungibile dal pulsante nella navigazione principale.
+Dopo l’accesso, la prima area operativa è **Prenotazioni e agenda**, con il modulo di prenotazione e l’elenco. L’amministrazione si apre dal pulsante **Amministrazione**, accanto a **Regolamenti** nella navigazione principale, visibile soltanto agli amministratori. Il pannello non compare sotto le prenotazioni. Al suo interno **Iscrizioni e permessi docenti** è una sezione inizialmente chiusa ed espandibile, con ricerca, tutte le azioni di gestione e il sottomenu **Crea un amministratore o docente**. Anche **Gestisci laboratori** usa lo stesso riquadro espandibile degli altri menu amministrativi. Il cambio password si trova nella sezione **Profilo** della navigazione principale. Nessun riquadro o download del regolamento compare dentro Prenotazioni e agenda: indice e documento completo si trovano soltanto nella sezione Regolamenti, raggiungibile dal pulsante nella navigazione principale.
 
 ## Sospensione temporanea di un laboratorio
 
@@ -130,3 +130,13 @@ La prova opzionale `python3 tests/browser_admin_navigation.py` verifica il menu 
 Il riquadro ripetuto “Laboratori della scuola” è stato rimosso: l’elenco rimane nella scelta del laboratorio. Nell’agenda **Mostra tutte le date** elimina soltanto il filtro del giorno, mantenendo il laboratorio scelto (o Tutti i laboratori) e la spunta **Le mie prenotazioni**. Il pulsante diventa **Torna al [giorno]**: premendolo si ripristina il giorno precedente mantenendo i filtri di laboratorio e proprietà correnti. Si può cambiare laboratorio anche mentre si consultano tutte le date. Scegliendo manualmente un giorno si torna subito alla visualizzazione giornaliera. Un riepilogo mostra sempre i filtri applicati. “Tutte le date” comprende soltanto le prenotazioni ancora conservate nell’app.
 
 La prova opzionale `python3 tests/browser_agenda_filters.py` verifica combinazioni di date, laboratori e prenotazioni personali, ritorno al giorno precedente, aggiornamento dei dati e navigazione dal calendario.
+
+## Profilo personale
+
+**Profilo** mostra esclusivamente i dati dell’utente collegato: nome, email di accesso, ruolo, stato di approvazione, scadenza della sessione in ora italiana e conteggio delle proprie prenotazioni conservate. Un pulsante apre le proprie prenotazioni nell’agenda. Nome, email e ruolo sono consultabili; non è previsto un cambio autonomo di ruolo o approvazione.
+
+Il modulo di cambio password è stato spostato qui dalla pagina principale: richiede la password corrente e la conferma della nuova, e revoca tutte le sessioni dopo il salvataggio. Nessuna password esistente viene visualizzata.
+
+Per gli amministratori il profilo include un riepilogo delle autorizzazioni, il numero di iscritti in attesa e di amministratori attivi, il richiamo alla protezione dell’ultimo amministratore e il collegamento ad Amministrazione. Nessun dato aggiuntivo viene richiesto e non sono necessarie migrazioni del database.
+
+La prova opzionale `python3 tests/browser_profile.py` verifica i profili docente e amministratore, la visualizzazione dei soli dati personali, i collegamenti, il cambio password, la revoca delle altre sessioni e la vista mobile.
