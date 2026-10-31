@@ -1,11 +1,12 @@
 # Prenotazioni laboratori scolastici
 
-App da browser per i cinque laboratori della scuola, con SQLite gratuito su disco, registrazione autonoma e amministrazione. Richiede Python 3.12 o successivo e solo la libreria standard. Nessun servizio Google o servizio email necessario.
+App da browser per i cinque laboratori della scuola, con SQLite gratuito su disco, registrazione autonoma e amministrazione. Richiede Python 3.12 o successivo e le dipendenze indicate in `requirements.txt` (ReportLab e Pillow per PDF e immagini). Nessun servizio Google o servizio email necessario.
 
 ## Primo avvio
 
 ```sh
 cd /workspace/APP-LABORATORI-SCUOLA
+python3 -m pip install --user -r requirements.txt
 python3 app.py
 ```
 
@@ -117,9 +118,9 @@ In **Calendario delle chiusure**, scegliere il mese e spuntare uno o più giorni
 
 **Le mie prenotazioni** filtra l’agenda o il calendario usando l’account proprietario. I docenti possono scegliere **Modifica** sulle proprie prenotazioni, mantenendo il medesimo record e proprietario; possono cambiare laboratorio, data, singola ora, classe e note entro le regole ordinarie. I controlli su proprietà, disponibilità e aggiornamento avvengono nella stessa transazione. Gli amministratori conservano la gestione delle prenotazioni di tutti.
 
-Il riquadro **Stampa e PDF delle prenotazioni** è disponibile a tutti gli utenti approvati e attivi nella pagina **Prenotazioni e agenda**: si trova nella colonna sinistra, subito sotto il modulo di prenotazione, con campi e pulsanti disposti in verticale. Nel **Calendario** lo stesso riquadro compare nella colonna sinistra; non compare in Regolamenti, Profilo o Amministrazione. I valori selezionati si conservano passando tra agenda e calendario. Su telefono i riquadri si dispongono uno sotto l’altro. Scegliere data di riferimento, giorno/settimana/mese e prenotazioni personali/generali. La settimana va da lunedì a domenica, il mese dal primo all’ultimo giorno. **Apri stampa** apre una pagina dedicata con il comando di stampa del browser; **Scarica PDF** genera direttamente un PDF A4 con pagine numerate. Entrambi includono le comunicazioni visibili, senza dipendere dai filtri dell’agenda. I report utilizzano soltanto lo storico ancora conservato e non recuperano le prenotazioni eliminate dalla pulizia mensile. Il PDF usa il carattere standard Helvetica con codifica occidentale: lettere italiane e accenti sono supportati; eventuali caratteri fuori da questa codifica sono sostituiti nel PDF (la pagina di stampa conserva Unicode).
+Il riquadro **Stampa e PDF delle prenotazioni** è disponibile a tutti gli utenti approvati e attivi nella pagina **Prenotazioni e agenda**: si trova nella colonna sinistra, subito sotto il modulo di prenotazione, con campi e pulsanti disposti in verticale. Nel **Calendario** lo stesso riquadro compare nella colonna sinistra; non compare in Regolamenti, Profilo o Amministrazione. I valori selezionati si conservano passando tra agenda e calendario. Su telefono i riquadri si dispongono uno sotto l’altro. Scegliere data di riferimento, giorno/settimana/mese e prenotazioni personali/generali. La settimana va da lunedì a domenica, il mese dal primo all’ultimo giorno. **Apri stampa** apre una pagina dedicata con il comando di stampa del browser; **Scarica PDF** genera direttamente un PDF A4 con pagine numerate. Entrambi includono le comunicazioni visibili, senza dipendere dai filtri dell’agenda. I report utilizzano soltanto lo storico ancora conservato e non recuperano le prenotazioni eliminate dalla pulizia mensile. I documenti hanno intestazione scolastica ripetuta sulle pagine, titoli e date in evidenza, etichette in grassetto e note in corsivo. I PDF incorporano i font Vera e numerano le pagine; i testi vengono mandati a capo senza troncare le note.
 
-Non sono necessarie dipendenze aggiuntive: compatibilità Python 3.12 e WSGI PythonAnywhere. All’avvio viene aggiunta la tabella delle chiusure senza sostituire il database o i dati esistenti. Il modulo `reports.py` deve essere caricato insieme ai sorgenti aggiornati.
+Compatibile con Python 3.12 e WSGI PythonAnywhere. Installare `requirements.txt` per generare i report con immagini e impaginazione: `python3.12 -m pip install --user -r requirements.txt`. All’avvio viene aggiunta la tabella delle chiusure senza sostituire il database o i dati esistenti. Il modulo `reports.py` deve essere caricato insieme ai sorgenti aggiornati.
 
 Test aggiuntivi: `tests/test_planning.py` verifica permessi, modifiche, chiusure indipendenti, backup e report tramite WSGI. La prova opzionale `python3 tests/browser_planning.py` verifica i nuovi flussi completi in Chromium, inclusi download, stampa e mobile.
 
@@ -148,3 +149,7 @@ Gli amministratori vedono un numerino su **Amministrazione** e sul menu **Iscriz
 Il conteggio si aggiorna dopo le operazioni amministrative, ogni 30 secondi mentre la pagina è visibile e quando si torna alla scheda o alla pagina principale. La verifica periodica scarica soltanto il conteggio, tramite un’API riservata agli amministratori. I docenti e gli utenti non autenticati non possono consultarlo.
 
 La prova opzionale `python3 tests/browser_registration_notifications.py` verifica i due numerini, l’aggiornamento automatico dopo una registrazione da un’altra sessione, approvazione ed eliminazione, assenza completa degli indicatori a zero, protezione dalle risposte obsolete, vista mobile e accesso riservato.
+
+Il calendario settimanale mantiene tutti e sette i giorni, con colonne più compatte per sabato e domenica e spazio dedicato ai cinque giorni prenotabili. Sui tablet il calendario occupa l’intera larghezza disponibile, sotto il riquadro di stampa; sui telefoni si scorre soltanto la griglia. Le schede delle prenotazioni mandano a capo i testi lunghi senza troncarli.
+
+I report usano l’immagine **intestazione** corrente conservata nel database, comprese le sostituzioni caricate dall’amministratore. JPEG, PNG e WebP vengono preparati per la stampa senza alterare le proporzioni. Se un’immagine caricata non è decodificabile viene usata l’intestazione originale del progetto. I dati delle prenotazioni non vengono trasformati in maiuscolo: maiuscole e grassetti distinguono solo titoli, date ed etichette.

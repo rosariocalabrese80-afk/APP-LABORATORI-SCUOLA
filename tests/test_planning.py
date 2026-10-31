@@ -163,6 +163,61 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(after['role'], 'teacher')
         self.assertEqual(self.request('/api/data', cookie=self.admin)['status'], 200)
 
+    def test_formatted_reports_use_current_letterhead_in_supported_formats(self):
+        import base64
+        import re
+        from io import BytesIO
+        from PIL import Image
+        self.request('/api/bookings', self.slot, self.teacher)
+        for image_format,mime in [('JPEG','image/jpeg'),('PNG','image/png'),('WEBP','image/webp')]:
+            with self.subTest(image_format=image_format):
+                image = BytesIO()
+                Image.new('RGB',(800,120),(24,80,160)).save(image,format=image_format)
+                with app.connect() as db:
+                    db.execute("UPDATE school_assets SET mime=?,content=? WHERE kind='header'",(mime,image.getvalue()))
+                response = self.request('/api/report?date=2026-11-02', cookie=self.teacher)
+                self.assertEqual(response['status'],200)
+                html = response['body'].decode()
+                self.assertIn('<h1>PRENOTAZIONI GIORNALIERE</h1>',html)
+                self.assertIn('<dt>Laboratorio</dt><dd><strong>',html)
+                self.assertIn('<em>',html)
+                encoded = re.search('src="data:image/png;base64,([^\"]+)"',html).group(1)
+                with Image.open(BytesIO(base64.b64decode(encoded))) as decoded:
+                    self.assertEqual(decoded.size,(800,120))
+                    self.assertTrue(all(abs(a-b)<=3 for a,b in zip(decoded.getpixel((0,0)),(24,80,160))))
+                pdf = self.request('/api/report?date=2026-11-02&format=pdf', cookie=self.teacher)
+                self.assertEqual(pdf['status'],200)
+                self.assertIn(b'/Subtype /Image',pdf['body'])
+                self.assertIn(b'BitstreamVeraSans-Bold',pdf['body'])
+                self.assertIn(b'BitstreamVeraSans-Oblique',pdf['body'])
+
+    def test_empty_reports_keep_letterhead_and_corrupt_upload_falls_back(self):
+        import base64
+        import re
+        from io import BytesIO
+        from PIL import Image
+        with app.connect() as db:
+            db.execute("UPDATE school_assets SET mime='image/png',content=? WHERE kind='header'",(b'not-a-decodable-image',))
+        html = self.request('/api/report?date=2026-11-02',cookie=self.teacher)['body'].decode()
+        self.assertIn('Nessuna prenotazione',html)
+        encoded = re.search('src="data:image/png;base64,([^\"]+)"',html).group(1)
+        with Image.open(BytesIO(base64.b64decode(encoded))) as decoded, Image.open(app.ROOT/'web/assets/school-header.jpg') as original:
+            self.assertEqual(decoded.size,original.size)
+        pdf = self.request('/api/report?date=2026-11-02&format=pdf',cookie=self.teacher)
+        self.assertEqual(pdf['status'],200)
+        self.assertIn(b'/Subtype /Image',pdf['body'])
+        with app.connect() as db:
+            self.assertEqual(db.execute("SELECT content FROM school_assets WHERE kind='header'").fetchone()[0],b'not-a-decodable-image')
+
+    def test_long_report_notes_split_across_pages_without_truncation(self):
+        import re
+        slot = {**self.slot,'notes':'Riga\n'*180+'FINE-NOTE-LUNGHE'}
+        self.assertEqual(self.request('/api/bookings',slot,self.teacher)['status'],201)
+        pdf = self.request('/api/report?date=2026-11-02&format=pdf',cookie=self.teacher)
+        self.assertEqual(pdf['status'],200)
+        self.assertIn(b'FINE-NOTE-LUNGHE',pdf['body'])
+        self.assertGreaterEqual(max(map(int,re.findall(rb'/Count\s+(\d+)',pdf['body']))),2)
+
     def test_pdf_pagination_and_offsets(self):
         raw=reports.pdf_document(['Riga è (test) \\ '+str(n) for n in range(140)])
         self.assertIn(b'/Count 3',raw)

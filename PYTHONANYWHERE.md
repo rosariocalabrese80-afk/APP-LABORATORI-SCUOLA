@@ -70,7 +70,7 @@ Le prove locali confermano persistenza e compatibilità WSGI; la pubblicazione e
 
 ## Aggiornamento con backup, chiusure e PDF
 
-Prima dell’aggiornamento creare un backup con il comando sopra. Dopo questa versione è disponibile anche il download dal pannello amministrativo. Aggiornare i sorgenti includendo **app.py, wsgi.py, reports.py, backup.py, school.py, web/ e documents/**; mantenere il percorso LAB_DB e l’impostazione COOKIE_SECURE già configurati nel file WSGI dell’hosting. Non sovrascrivere laboratori-data. Nessuna installazione pip aggiuntiva è richiesta con Python 3.12.
+Prima dell’aggiornamento creare un backup con il comando sopra. Dopo questa versione è disponibile anche il download dal pannello amministrativo. Aggiornare i sorgenti includendo **app.py, wsgi.py, reports.py, backup.py, school.py, web/ e documents/**; mantenere il percorso LAB_DB e l’impostazione COOKIE_SECURE già configurati nel file WSGI dell’hosting. Non sovrascrivere laboratori-data. Per i report impaginati con intestazione installare le dipendenze: `python3.12 -m pip install --user -r "$HOME/laboratori-app/requirements.txt"`. L’installatore incluso esegue già questo passaggio.
 
 Premere **Web → Reload**: l’inizializzazione crea automaticamente la tabella delle chiusure nel database esistente. Account, documenti, immagini, prenotazioni conservate e configurazioni rimangono presenti; resta attiva la pulizia ordinaria dello storico più vecchio di un mese. Verificare sul sito il download del backup come amministratore, una chiusura di prova, la modifica di una prenotazione e i report personali/generali. Non rendere pubblico il database o il backup tramite mapping statici.
 
@@ -83,3 +83,13 @@ python3.12 -m zipfile -e "$HOME/APP-LABORATORI-SCUOLA-main.zip" "$HOME/laborator
 ```
 
 L’installatore verifica il pacchetto, installa l’intera cartella dell’app, conserva la cartella precedente e crea backup SQLite verificati dei database nei percorsi standard. Non modifica la configurazione WSGI. Conserva `laboratori-data` e gestisce anche il database precedente in `laboratori-app/data`. I percorsi personalizzati non vengono individuati automaticamente: mantenere il relativo `LAB_DB` nel file WSGI. Premere infine **Web → Reload**. Per una prima installazione configurare il file WSGI come nella sezione 2.
+
+## Installazione nella cartella originale APP-LABORATORI-SCUOLA-main
+
+Se il sito usa la cartella originale (come nell’installazione di Rosario), mantenere quel percorso e la configurazione WSGI esistente. Dopo l’unico caricamento dello ZIP completo nella cartella principale, eseguire nella stessa console:
+
+```bash
+python3.12 -m zipfile -e "$HOME/APP-LABORATORI-SCUOLA-main.zip" "$HOME" && python3.12 -m pip install --user -r "$HOME/APP-LABORATORI-SCUOLA-main/requirements.txt"
+```
+
+Poi premere **Web → Reload**. Il pacchetto non contiene database e l’estrazione conserva i dati esistenti; l’installazione delle dipendenze è necessaria per i nuovi report stampabili/PDF.

@@ -2,6 +2,7 @@
 # Full PythonAnywhere installation. Optional destination root is for local validation.
 set -euo pipefail
 package_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+python3.12 -m pip install --user --no-input --disable-pip-version-check -r "$package_dir/requirements.txt"
 python3.12 - "$package_dir" "${1:-$HOME}" <<'PY'
 from pathlib import Path
 from datetime import datetime

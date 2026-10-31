@@ -1,1 +1,3 @@
-# Python >=3.12; solo libreria standard. Nessuna dipendenza esterna.
+# Python >=3.12. PDF impaginati e intestazioni JPEG/PNG/WebP.
+reportlab==4.4.9
+Pillow==12.3.0

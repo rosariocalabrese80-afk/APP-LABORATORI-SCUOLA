@@ -98,6 +98,15 @@ with tempfile.TemporaryDirectory() as folder:
             assert 'MODIFICATA' in popup.value.locator('body').inner_text()
             assert 'ALTRA' not in popup.value.locator('body').inner_text()
             assert popup.value.get_by_role('button',name='Stampa / Salva come PDF').count()==1
+            popup.value.wait_for_function("document.querySelector('header .letterhead').naturalWidth>0")
+            assert popup.value.locator('h1').inner_text()=='PRENOTAZIONI SETTIMANALI'
+            assert popup.value.locator('.booking strong').count()>0
+            assert popup.value.locator('em').count()>0
+            popup.value.emulate_media(media='print')
+            assert popup.value.locator('.print-actions').is_hidden()
+            assert popup.value.locator('.report-sheet > thead').evaluate("el=>getComputedStyle(el).display")=='table-header-group'
+            browser_pdf=popup.value.pdf(format='A4',print_background=True,prefer_css_page_size=True)
+            assert browser_pdf.startswith(b'%PDF-')
             admin.get_by_text('Backup completo',exact=True).click()
             with admin.expect_download() as download:
                 admin.get_by_role('link',name='Scarica backup SQLite').click()
