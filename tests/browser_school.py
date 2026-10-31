@@ -31,13 +31,15 @@ with tempfile.TemporaryDirectory() as temporary:
    page.locator('#username').fill('admin@example.com');page.locator('#password').fill('abcdef');page.get_by_role('button',name='Accedi',exact=True).click()
    page.locator('#workspace').wait_for(state='visible')
    assert page.locator('#homeRegulation').count()==0
-   assert page.locator('#workspace').bounding_box()['y'] < page.locator('#adminPanel').bounding_box()['y']
+   assert page.locator('#adminPanel').is_hidden()
+   assert page.locator('#adminView').is_visible()
    page.locator('#rulesView').click();page.locator('#rulesPanel').wait_for(state='visible')
    with page.expect_download() as download:
     page.locator('#rulesPanel a[href="/api/regulations/download"]').click()
    target=Path(temporary)/'download.docx';download.value.save_as(target)
    assert target.read_bytes()==(app.ROOT/'documents'/'regolamento-laboratori.docx').read_bytes()
    page.locator('#homeView').click()
+   page.locator('#adminView').click()
    page.get_by_text('Identità della scuola e regolamento',exact=True).click()
    for kind in ('header','logo'):
     page.locator('#brandingKind').select_option(kind)
@@ -45,6 +47,7 @@ with tempfile.TemporaryDirectory() as temporary:
     with page.expect_response(lambda r:r.url.endswith('/api/admin/branding') and r.request.method=='POST') as saved:
      page.get_by_role('button',name='Salva immagine',exact=True).click()
     assert saved.value.status==200
+   page.locator('#homeView').click()
    page.locator('#schoolLetterhead').wait_for(state='visible')
    page.locator('#rulesView').click();page.locator('#rulesPanel').wait_for(state='visible')
    assert page.locator('#rulesIndex li').count()==10
@@ -60,6 +63,7 @@ with tempfile.TemporaryDirectory() as temporary:
    page.go_back();page.wait_for_url('**/#regolamenti/accesso-chiavi')
    page.locator('#homeView').click();assert '#regolamenti' not in page.url
    page.locator('#schoolLetterhead').wait_for(state='visible')
+   page.locator('#adminView').click()
    page.locator('#regulationFile').set_input_files({'name':'nuovo-regolamento.txt','mimeType':'text/plain','buffer':b'Nuovo regolamento completo per la scuola.'})
    page.get_by_role('button',name='Pubblica il documento completo',exact=True).click()
    page.get_by_text('Documento pubblicato. Controlla e conferma la sintesi per questa nuova versione.',exact=True).wait_for()
@@ -67,6 +71,7 @@ with tempfile.TemporaryDirectory() as temporary:
    assert 'nuovo-regolamento.txt' in page.locator('#rulesVersion').inner_text()
    page.locator('#rulesWarning').wait_for(state='visible')
    page.locator('#homeView').click()
+   page.locator('#adminView').click()
    page.get_by_text('Modifica e conferma i capitoli della sintesi',exact=True).click()
    page.locator('#summaryBody0').fill('Testo essenziale aggiornato per il nuovo regolamento.')
    page.get_by_role('button',name='Salva la sintesi per il documento attuale',exact=True).click()

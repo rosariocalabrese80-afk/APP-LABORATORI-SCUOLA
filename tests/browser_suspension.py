@@ -35,6 +35,7 @@ with tempfile.TemporaryDirectory() as temporary:
    login(admin,base,'admin@example.com');login(teacher,base,'teacher@example.com')
    teacher.locator('#lab').select_option('1');teacher.locator('#date').fill('2026-11-02');teacher.locator('#filterDate').fill('2026-11-02');teacher.locator('#school_class').fill('2B')
    teacher.wait_for_function("!document.querySelector('#hoursField input[value=\"8\"]').disabled")
+   admin.locator('#adminView').click()
    admin.get_by_text('Gestisci laboratori',exact=True).click()
    row=admin.locator('#adminLabs [data-lab-id="1"]')
    row.get_by_role('button',name='Sospendi temporaneamente',exact=True).click()

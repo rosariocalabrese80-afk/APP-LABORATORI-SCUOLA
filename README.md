@@ -97,7 +97,7 @@ La suite standard include i test di documenti, versionamento, permessi, integrit
 
 ## Ordine della schermata principale
 
-Dopo l’accesso, la prima area operativa è **Prenotazioni e agenda**, con il modulo di prenotazione e l’elenco. Anche per gli amministratori questo blocco precede il pannello amministrativo; amministrazione e cambio password seguono più in basso. Nessun riquadro o download del regolamento compare dentro Prenotazioni e agenda: indice e documento completo si trovano soltanto nella sezione Regolamenti, raggiungibile dal pulsante nella navigazione principale.
+Dopo l’accesso, la prima area operativa è **Prenotazioni e agenda**, con il modulo di prenotazione e l’elenco. L’amministrazione si apre dal pulsante **Amministrazione**, accanto a **Regolamenti** nella navigazione principale, visibile soltanto agli amministratori. Il pannello non compare sotto le prenotazioni. Al suo interno **Docenti e iscritti · ammessi e da ammettere** è una sezione inizialmente chiusa ed espandibile, con ricerca e tutte le azioni di gestione. Il cambio password resta nella pagina delle prenotazioni. Nessun riquadro o download del regolamento compare dentro Prenotazioni e agenda: indice e documento completo si trovano soltanto nella sezione Regolamenti, raggiungibile dal pulsante nella navigazione principale.
 
 ## Sospensione temporanea di un laboratorio
 
@@ -122,3 +122,5 @@ Il riquadro **Stampa e PDF delle prenotazioni** è disponibile a tutti gli utent
 Non sono necessarie dipendenze aggiuntive: compatibilità Python 3.12 e WSGI PythonAnywhere. All’avvio viene aggiunta la tabella delle chiusure senza sostituire il database o i dati esistenti. Il modulo `reports.py` deve essere caricato insieme ai sorgenti aggiornati.
 
 Test aggiuntivi: `tests/test_planning.py` verifica permessi, modifiche, chiusure indipendenti, backup e report tramite WSGI. La prova opzionale `python3 tests/browser_planning.py` verifica i nuovi flussi completi in Chromium, inclusi download, stampa e mobile.
+
+La prova opzionale `python3 tests/browser_admin_navigation.py` verifica il menu Amministrazione, l’elenco iscritti inizialmente chiuso, ricerca e approvazione, ritorno alle prenotazioni, vista mobile e assenza del menu per i docenti.

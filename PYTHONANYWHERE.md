@@ -6,11 +6,11 @@ Queste istruzioni preparano un sito raggiungibile dalla scuola e da casa. L’ag
 
 Creare l’account su PythonAnywhere senza comunicare la password in chat. Annotare lo username e il dominio effettivamente assegnato. Se l’account è sul servizio europeo, usare il dominio indicato dal proprio pannello, senza dedurlo da esempi.
 
-Nella scheda **Files**, caricare `laboratori-pythonanywhere.zip` nella propria cartella principale. Nella scheda **Consoles** aprire una console **Bash** ed eseguire:
+Nella scheda **Files**, caricare `APP-LABORATORI-SCUOLA-main.zip` nella propria cartella principale. Nella scheda **Consoles** aprire una console **Bash** ed eseguire:
 
 ```bash
-python3 -m zipfile -e "$HOME/laboratori-pythonanywhere.zip" "$HOME/laboratori-app"
-mkdir -p "$HOME/laboratori-data"
+python3.12 -m zipfile -e "$HOME/APP-LABORATORI-SCUOLA-main.zip" "$HOME/laboratori-pacchetto" \
+  && bash "$HOME/laboratori-pacchetto/APP-LABORATORI-SCUOLA-main/INSTALLA.sh"
 ```
 
 La cartella `laboratori-app` deve contenere `app.py`, `wsgi.py` e `web/index.html`. Lo ZIP non contiene database, password, codice monouso o dati di prova.
@@ -76,10 +76,10 @@ Premere **Web → Reload**: l’inizializzazione crea automaticamente la tabella
 
 ## Pacchetto completo con un solo caricamento
 
-Scaricare `laboratori-pythonanywhere-completo.zip` dalla cartella `dist` su GitHub. È il pacchetto completo: include sorgenti, immagini, documenti, test e `INSTALLA.sh`, senza database, password o token. Caricare solo questo ZIP nella cartella principale e usare una sola console Bash:
+Scaricare `APP-LABORATORI-SCUOLA-main.zip` dalla cartella `dist` su GitHub. È il pacchetto completo: include sorgenti, immagini, documenti, test e `INSTALLA.sh`, senza database, password o token. Caricare solo questo ZIP nella cartella principale e usare una sola console Bash:
 
 ```bash
-python3.12 -m zipfile -e "$HOME/laboratori-pythonanywhere-completo.zip" "$HOME/laboratori-pacchetto" && bash "$HOME/laboratori-pacchetto/APP-LABORATORI-SCUOLA-main/INSTALLA.sh"
+python3.12 -m zipfile -e "$HOME/APP-LABORATORI-SCUOLA-main.zip" "$HOME/laboratori-pacchetto" && bash "$HOME/laboratori-pacchetto/APP-LABORATORI-SCUOLA-main/INSTALLA.sh"
 ```
 
 L’installatore verifica il pacchetto, installa l’intera cartella dell’app, conserva la cartella precedente e crea backup SQLite verificati dei database nei percorsi standard. Non modifica la configurazione WSGI. Conserva `laboratori-data` e gestisce anche il database precedente in `laboratori-app/data`. I percorsi personalizzati non vengono individuati automaticamente: mantenere il relativo `LAB_DB` nel file WSGI. Premere infine **Web → Reload**. Per una prima installazione configurare il file WSGI come nella sezione 2.

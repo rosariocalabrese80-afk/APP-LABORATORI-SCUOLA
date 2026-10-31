@@ -34,6 +34,7 @@ with tempfile.TemporaryDirectory() as folder:
                 page.locator('#password').fill('abcdef')
                 page.get_by_role('button',name='Accedi',exact=True).click()
                 page.locator('#workspace').wait_for(state='visible')
+            admin.locator('#adminView').click()
             admin.get_by_text('Calendario delle chiusure',exact=True).click()
             admin.locator('#closureMonth').fill('2026-11')
             admin.locator('#closureMonth').dispatch_event('change')
