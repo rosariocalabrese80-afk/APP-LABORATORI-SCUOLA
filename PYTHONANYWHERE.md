@@ -73,3 +73,13 @@ Le prove locali confermano persistenza e compatibilità WSGI; la pubblicazione e
 Prima dell’aggiornamento creare un backup con il comando sopra. Dopo questa versione è disponibile anche il download dal pannello amministrativo. Aggiornare i sorgenti includendo **app.py, wsgi.py, reports.py, backup.py, school.py, web/ e documents/**; mantenere il percorso LAB_DB e l’impostazione COOKIE_SECURE già configurati nel file WSGI dell’hosting. Non sovrascrivere laboratori-data. Nessuna installazione pip aggiuntiva è richiesta con Python 3.12.
 
 Premere **Web → Reload**: l’inizializzazione crea automaticamente la tabella delle chiusure nel database esistente. Account, documenti, immagini, prenotazioni conservate e configurazioni rimangono presenti; resta attiva la pulizia ordinaria dello storico più vecchio di un mese. Verificare sul sito il download del backup come amministratore, una chiusura di prova, la modifica di una prenotazione e i report personali/generali. Non rendere pubblico il database o il backup tramite mapping statici.
+
+## Pacchetto completo con un solo caricamento
+
+Scaricare `laboratori-pythonanywhere-completo.zip` dalla cartella `dist` su GitHub. È il pacchetto completo: include sorgenti, immagini, documenti, test e `INSTALLA.sh`, senza database, password o token. Caricare solo questo ZIP nella cartella principale e usare una sola console Bash:
+
+```bash
+python3.12 -m zipfile -e "$HOME/laboratori-pythonanywhere-completo.zip" "$HOME/laboratori-pacchetto" && bash "$HOME/laboratori-pacchetto/APP-LABORATORI-SCUOLA-main/INSTALLA.sh"
+```
+
+L’installatore verifica il pacchetto, installa l’intera cartella dell’app, conserva la cartella precedente e crea backup SQLite verificati dei database nei percorsi standard. Non modifica la configurazione WSGI. Conserva `laboratori-data` e gestisce anche il database precedente in `laboratori-app/data`. I percorsi personalizzati non vengono individuati automaticamente: mantenere il relativo `LAB_DB` nel file WSGI. Premere infine **Web → Reload**. Per una prima installazione configurare il file WSGI come nella sezione 2.
