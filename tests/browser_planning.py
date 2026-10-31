@@ -34,6 +34,14 @@ with tempfile.TemporaryDirectory() as folder:
                 page.locator('#password').fill('abcdef')
                 page.get_by_role('button',name='Accedi',exact=True).click()
                 page.locator('#workspace').wait_for(state='visible')
+            assert teacher.locator('#workspace > aside > #reportPanel').count()==1
+            booking=teacher.locator('#bookingForm').evaluate('el=>{const r=el.closest(".card").getBoundingClientRect();return {x:r.x,bottom:r.bottom}}')
+            report=teacher.locator('#reportPanel').bounding_box()
+            assert abs(report['x']-booking['x'])<2
+            assert report['y']>=booking['bottom']
+            fields=[teacher.locator('#'+name).bounding_box() for name in ['reportDate','reportPeriod','reportScope']]
+            assert fields[0]['y']+fields[0]['height']<=fields[1]['y']
+            assert fields[1]['y']+fields[1]['height']<=fields[2]['y']
             admin.locator('#adminView').click()
             admin.get_by_text('Calendario delle chiusure',exact=True).click()
             admin.locator('#closureMonth').fill('2026-11')
@@ -73,6 +81,8 @@ with tempfile.TemporaryDirectory() as folder:
             teacher.locator('#calendarMine').check()
             assert teacher.locator('#calendarGrid .calendar-event').count()==1
             assert 'Chiusura straordinaria' in teacher.locator('#calendarGrid').inner_text()
+            assert teacher.locator('#calendarReportSlot > #reportPanel').count()==1
+            assert teacher.locator('#reportPanel').is_visible()
             teacher.locator('#reportDate').fill('2026-11-02')
             teacher.locator('#reportScope').select_option('mine')
             teacher.locator('#reportPeriod').select_option('week')
@@ -99,7 +109,17 @@ with tempfile.TemporaryDirectory() as folder:
                 assert db.execute('select count(*) from bookings').fetchone()[0]==2
             teacher.set_viewport_size(dict(width=390,height=844))
             teacher.locator('#homeView').click()
+            assert teacher.locator('#reportDate').input_value()=='2026-11-02'
+            assert teacher.locator('#reportPeriod').input_value()=='week'
+            assert teacher.locator('#reportScope').input_value()=='mine'
             assert teacher.evaluate('document.documentElement.scrollWidth <= innerWidth')
+            report=teacher.locator('#reportPanel').bounding_box()
+            assert report['width']<=390
+            assert teacher.locator('#reportPanel').is_visible()
+            for view,panel in [('rulesView','rulesPanel'),('profileView','profilePanel')]:
+                teacher.locator('#'+view).click()
+                teacher.locator('#'+panel).wait_for(state='visible')
+                assert teacher.locator('#reportPanel').is_hidden()
             assert not errors, errors
             print('Browser OK: chiusure spuntabili, blocco, avvisi, filtro personale, modifica, PDF, stampa, backup e mobile.')
             browser.close()
