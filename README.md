@@ -124,3 +124,9 @@ Non sono necessarie dipendenze aggiuntive: compatibilità Python 3.12 e WSGI Pyt
 Test aggiuntivi: `tests/test_planning.py` verifica permessi, modifiche, chiusure indipendenti, backup e report tramite WSGI. La prova opzionale `python3 tests/browser_planning.py` verifica i nuovi flussi completi in Chromium, inclusi download, stampa e mobile.
 
 La prova opzionale `python3 tests/browser_admin_navigation.py` verifica il menu Amministrazione, l’elenco iscritti inizialmente chiuso, ricerca e approvazione, ritorno alle prenotazioni, vista mobile e assenza del menu per i docenti.
+
+## Agenda semplificata e tutte le date
+
+Il riquadro ripetuto “Laboratori della scuola” è stato rimosso: l’elenco rimane nella scelta del laboratorio. Nell’agenda **Mostra tutte le date** elimina soltanto il filtro del giorno, mantenendo il laboratorio scelto (o Tutti i laboratori) e la spunta **Le mie prenotazioni**. Il pulsante diventa **Torna al [giorno]**: premendolo si ripristina il giorno precedente mantenendo i filtri di laboratorio e proprietà correnti. Si può cambiare laboratorio anche mentre si consultano tutte le date. Scegliendo manualmente un giorno si torna subito alla visualizzazione giornaliera. Un riepilogo mostra sempre i filtri applicati. “Tutte le date” comprende soltanto le prenotazioni ancora conservate nell’app.
+
+La prova opzionale `python3 tests/browser_agenda_filters.py` verifica combinazioni di date, laboratori e prenotazioni personali, ritorno al giorno precedente, aggiornamento dei dati e navigazione dal calendario.
