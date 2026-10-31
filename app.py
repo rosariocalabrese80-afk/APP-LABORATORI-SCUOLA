@@ -1,3 +1,5 @@
+import school
+from urllib.parse import quote, urlsplit
 import re
 import calendar
 from zoneinfo import ZoneInfo
@@ -71,6 +73,7 @@ def init():
         if not db.execute("SELECT 1 FROM settings WHERE key='catalog_seeded'").fetchone():
             db.executemany('INSERT OR IGNORE INTO labs(name) VALUES(?)', [(name,) for name in LABS])
             db.execute("INSERT INTO settings VALUES('catalog_seeded','1')")
+        school.initialize(db, ROOT)
     purge_old()
     prepare_setup()
 
@@ -286,7 +289,42 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(raw)
 
+    def send_blob(self, content, mime, filename=None):
+        self.send_response(200)
+        self.send_header('Content-Type', mime)
+        self.send_header('Content-Length', str(len(content)))
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        if filename:
+            self.send_header('Content-Disposition', "attachment; filename=regolamento." + filename.rsplit('.',1)[-1].lower() + "; filename*=UTF-8''" + quote(filename))
+        self.end_headers()
+        self.wfile.write(content)
+
     def do_GET(self):
+        self.path = urlsplit(self.path).path
+        if self.path == '/api/branding':
+            with connect() as db:
+                kinds = {row['kind'] for row in db.execute('SELECT kind FROM school_assets')}
+            self.reply(200, {'header': 'header' in kinds, 'logo': 'logo' in kinds})
+            return
+        if self.path in ('/api/branding/header','/api/branding/logo'):
+            with connect() as db:
+                asset = db.execute('SELECT mime,content FROM school_assets WHERE kind=?',(self.path.rsplit('/',1)[-1],)).fetchone()
+            if asset:
+                self.send_blob(asset['content'],asset['mime'])
+            else:
+                self.reply(404,{'error':'Immagine non ancora caricata.'})
+            return
+        if self.path in ('/api/regulations','/api/regulations/download'):
+            if self.require_user() is None:
+                return
+            with connect() as db:
+                if self.path.endswith('/download'):
+                    document = db.execute('SELECT filename,mime,content FROM regulation_document WHERE id=1').fetchone()
+                    self.send_blob(document['content'],document['mime'],document['filename'])
+                else:
+                    self.reply(200,school.regulations(db))
+            return
         if self.path == '/api/setup-status':
             with connect() as db:
                 complete = bool(db.execute("SELECT 1 FROM settings WHERE key='setup_complete'").fetchone())
@@ -325,7 +363,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.reply(403, {'error': 'Richiesta non consentita.'})
                 return
             size = int(self.headers.get('Content-Length', '0'))
-            if not 0 < size <= 16384:
+            if not 0 < size <= school.request_limit(self.path):
                 raise ValueError('Richiesta non valida.')
             data = json.loads(self.rfile.read(size))
             if not isinstance(data, dict):
@@ -379,7 +417,16 @@ class Handler(BaseHTTPRequestHandler):
                 if user['role'] != 'admin':
                     self.reply(403, {'error':'Accesso riservato agli amministratori.'})
                     return
-                if self.path == '/api/admin/users':
+                if self.path in ('/api/admin/regulation-file','/api/admin/regulation-summary','/api/admin/branding'):
+                    with connect() as db:
+                        db.execute('BEGIN IMMEDIATE')
+                        if self.path.endswith('/regulation-file'):
+                            school.upload_regulation(db,data)
+                        elif self.path.endswith('/regulation-summary'):
+                            school.update_summary(db,data)
+                        else:
+                            school.upload_branding(db,data)
+                elif self.path == '/api/admin/users':
                     manage_user(data,user)
                 elif self.path == '/api/admin/create-user':
                     role = data.get('role','admin')

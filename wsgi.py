@@ -41,7 +41,7 @@ class Request(app.Handler):
 def application(environ, start_response):
     try:
         length = int(environ.get('CONTENT_LENGTH') or '0')
-        if not 0 <= length <= 16384:
+        if not 0 <= length <= app.school.request_limit(environ.get('PATH_INFO','/')):
             raise ValueError()
     except ValueError:
         start_response('413 Content Too Large', [('Content-Type', 'application/json')])
