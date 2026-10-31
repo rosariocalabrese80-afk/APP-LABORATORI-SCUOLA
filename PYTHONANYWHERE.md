@@ -67,3 +67,9 @@ Scaricare il file dal pannello Files su un supporto custodito dalla scuola. Un b
 Aggiornare solo `laboratori-app`, conservando `laboratori-data`. Non caricare database vuoti sopra quello reale e non cancellare quella directory. Gestire una scadenza esplicita anche dei backup scaricati: lo storico dell’app elimina le prenotazioni anteriori a un mese, ma non può cancellare copie già create. Su WSGI la pulizia avviene all’avvio dei worker e alla lettura dell’agenda; senza accessi o riavvii non è garantita una cancellazione all’esatta mezzanotte.
 
 Le prove locali confermano persistenza e compatibilità WSGI; la pubblicazione e la prova sul proprio account devono ancora essere eseguite.
+
+## Aggiornamento con backup, chiusure e PDF
+
+Prima dell’aggiornamento creare un backup con il comando sopra. Dopo questa versione è disponibile anche il download dal pannello amministrativo. Aggiornare i sorgenti includendo **app.py, wsgi.py, reports.py, backup.py, school.py, web/ e documents/**; mantenere il percorso LAB_DB e l’impostazione COOKIE_SECURE già configurati nel file WSGI dell’hosting. Non sovrascrivere laboratori-data. Nessuna installazione pip aggiuntiva è richiesta con Python 3.12.
+
+Premere **Web → Reload**: l’inizializzazione crea automaticamente la tabella delle chiusure nel database esistente. Account, documenti, immagini, prenotazioni conservate e configurazioni rimangono presenti; resta attiva la pulizia ordinaria dello storico più vecchio di un mese. Verificare sul sito il download del backup come amministratore, una chiusura di prova, la modifica di una prenotazione e i report personali/generali. Non rendere pubblico il database o il backup tramite mapping statici.

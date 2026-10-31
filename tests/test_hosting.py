@@ -7,6 +7,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from urllib.parse import urlsplit
 from unittest.mock import patch
 from wsgiref.util import setup_testing_defaults
 from wsgiref.validate import validator
@@ -29,9 +30,10 @@ class HostingTests(unittest.TestCase):
         environ = {}
         setup_testing_defaults(environ)
         raw = json.dumps(data).encode() if data is not None else b''
-        environ.update(PATH_INFO=path, REQUEST_METHOD=method or ('POST' if data is not None else 'GET'),
+        parsed = urlsplit(path)
+        environ.update(PATH_INFO=parsed.path, REQUEST_METHOD=method or ('POST' if data is not None else 'GET'),
                        CONTENT_LENGTH=str(len(raw)), CONTENT_TYPE='application/json',
-                       HTTP_COOKIE=cookie, QUERY_STRING='', **{'wsgi.input': io.BytesIO(raw)})
+                       HTTP_COOKIE=cookie, QUERY_STRING=parsed.query, **{'wsgi.input': io.BytesIO(raw)})
         response = {}
 
         def start(status, headers, exc_info=None):

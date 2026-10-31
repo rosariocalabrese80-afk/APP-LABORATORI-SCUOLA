@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory() as temporary:
    target=Path(temporary)/'download.docx';download.value.save_as(target)
    assert target.read_bytes()==(app.ROOT/'documents'/'regolamento-laboratori.docx').read_bytes()
    page.locator('#homeView').click()
-   page.locator('.school-admin > summary').click()
+   page.get_by_text('Identità della scuola e regolamento',exact=True).click()
    for kind in ('header','logo'):
     page.locator('#brandingKind').select_option(kind)
     page.locator('#brandingFile').set_input_files({'name':'test.png','mimeType':'image/png','buffer':PNG})

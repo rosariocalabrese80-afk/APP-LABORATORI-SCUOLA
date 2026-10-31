@@ -15,6 +15,8 @@ class Request(app.Handler):
 
     def __init__(self, environ, body):
         self.path = environ.get('PATH_INFO', '/')
+        if environ.get('QUERY_STRING'):
+            self.path += '?' + environ['QUERY_STRING']
         self.headers = Message()
         for key, value in environ.items():
             if key.startswith('HTTP_'):

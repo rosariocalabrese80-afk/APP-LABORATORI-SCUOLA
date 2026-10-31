@@ -1,5 +1,5 @@
 import school
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote, urlsplit, parse_qs
 import re
 import calendar
 from zoneinfo import ZoneInfo
@@ -78,6 +78,9 @@ def init():
         if not db.execute("SELECT 1 FROM settings WHERE key='catalog_seeded'").fetchone():
             db.executemany('INSERT OR IGNORE INTO labs(name) VALUES(?)', [(name,) for name in LABS])
             db.execute("INSERT INTO settings VALUES('catalog_seeded','1')")
+        db.execute('''CREATE TABLE IF NOT EXISTS closures(
+            day TEXT PRIMARY KEY, message TEXT NOT NULL DEFAULT '',
+            blocked INTEGER NOT NULL DEFAULT 1, visible INTEGER NOT NULL DEFAULT 1)''')
         school.initialize(db, ROOT)
     purge_old()
     prepare_setup()
@@ -104,6 +107,8 @@ def _book(db, data, user, booking_id=None):
         raise ValueError('Prenota una singola ora intera, dal lunedì al venerdì, tra le 08:00 e le 14:00.')
     if not today() <= start.date() <= month_shift(today(), 1):
         raise ValueError('Puoi prenotare da oggi fino a un mese di calendario in avanti.')
+    if db.execute('SELECT 1 FROM closures WHERE day=? AND blocked=1', (start.date().isoformat(),)).fetchone():
+        raise ValueError('La scuola è chiusa alle prenotazioni in questa data.')
     start, end = start.isoformat(timespec='minutes'), end.isoformat(timespec='minutes')
     laboratory = db.execute('SELECT * FROM labs WHERE id=? AND active=1', (lab,)).fetchone()
     if not laboratory:
@@ -127,6 +132,40 @@ def book(data, user, booking_id=None):
     with connect() as db:
         db.execute('BEGIN IMMEDIATE')
         return _book(db, data, user, booking_id)
+
+
+def edit_own_booking(data, user):
+    ident = int(data.get('id', 0))
+    with connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        if not db.execute('SELECT 1 FROM bookings WHERE id=? AND user_id=?', (ident, user['id'])).fetchone():
+            raise ValueError('Prenotazione non disponibile per la modifica.')
+        hours = data.get('hours')
+        if not isinstance(hours, list) or len(hours) != 1 or type(hours[0]) is not int or hours[0] not in range(8,14):
+            raise ValueError('Per modificare seleziona una sola ora valida.')
+        day = data.get('date', '')
+        slot = {**data, 'start': f'{day}T{hours[0]:02d}:00', 'end': f'{day}T{hours[0]+1:02d}:00'}
+        return _book(db, slot, user, ident)
+
+
+def manage_closure(data):
+    from datetime import date
+    day = str(data.get('day', ''))
+    if date.fromisoformat(day).isoformat() != day:
+        raise ValueError('Data non valida.')
+    with connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        if data.get('action') == 'delete':
+            db.execute('DELETE FROM closures WHERE day=?', (day,))
+            return
+        if type(data.get('blocked')) is not bool or type(data.get('visible')) is not bool:
+            raise ValueError('Seleziona blocco e visibilità.')
+        message = str(data.get('message', '')).strip()
+        if len(message) > 1000:
+            raise ValueError('Comunicazione massimo 1000 caratteri.')
+        db.execute('INSERT INTO closures(day,message,blocked,visible) VALUES(?,?,?,?) '
+                   'ON CONFLICT(day) DO UPDATE SET message=excluded.message,blocked=excluded.blocked,visible=excluded.visible',
+                   (day, message, int(data['blocked']), int(data['visible'])))
 
 
 def book_many(data, user, booking_id=None):
@@ -304,12 +343,35 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         if filename:
-            self.send_header('Content-Disposition', "attachment; filename=regolamento." + filename.rsplit('.',1)[-1].lower() + "; filename*=UTF-8''" + quote(filename))
+            self.send_header('Content-Disposition', 'attachment; filename="' + filename.encode('ascii', 'ignore').decode().replace('\"', '') + '"' + "; filename*=UTF-8''" + quote(filename))
         self.end_headers()
         self.wfile.write(content)
 
     def do_GET(self):
+        query = parse_qs(urlsplit(self.path).query)
         self.path = urlsplit(self.path).path
+        if self.path in ('/api/admin/backup', '/api/report'):
+            user = self.require_user()
+            if user is None:
+                return
+            if self.path == '/api/admin/backup':
+                if user['role'] != 'admin':
+                    self.reply(403, {'error': 'Accesso riservato agli amministratori.'})
+                    return
+                import tempfile
+                import backup
+                with tempfile.TemporaryDirectory() as folder:
+                    file = backup.backup(Path(folder) / 'backup.sqlite3')
+                    self.send_blob(file.read_bytes(), 'application/vnd.sqlite3', 'laboratori-' + today().isoformat() + '.sqlite3')
+                return
+            import reports
+            try:
+                content, mime, filename = reports.render(query, user)
+            except (ValueError, TypeError, OverflowError):
+                self.reply(400, {'error': 'Periodo o formato del report non valido.'})
+                return
+            self.send_blob(content, mime, filename)
+            return
         if self.path == '/api/branding':
             with connect() as db:
                 kinds = {row['kind'] for row in db.execute('SELECT kind FROM school_assets')}
@@ -346,6 +408,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             with connect() as db:
                 self.reply(200, {'users':[dict(r) for r in db.execute('SELECT id,username,name,role,status FROM users ORDER BY name')],
+                                 'closures':[dict(r) for r in db.execute('SELECT * FROM closures ORDER BY day')],
                                  'labs':[dict(r) for r in db.execute('SELECT * FROM labs ORDER BY name')]})
         elif self.path == '/api/data':
             purge_old()
@@ -354,6 +417,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
             with connect() as db:
                 self.reply(200, {'today': today().isoformat(), 'booking_until': month_shift(today(),1).isoformat(), 'history_from': month_shift(today(),-1).isoformat(), 'user': dict(user), 'labs': [dict(r) for r in db.execute('SELECT * FROM labs WHERE active=1 ORDER BY name')],
+                                 'closures': [dict(r) for r in db.execute('SELECT * FROM closures WHERE visible=1 OR ?=1 ORDER BY day', (int(user['role']=='admin'),))],
+                                 'unavailable_dates': [r['day'] for r in db.execute('SELECT day FROM closures WHERE blocked=1')],
                                  'bookings': [dict(r) for r in db.execute('SELECT b.*, l.name AS lab_name FROM bookings b JOIN labs l ON l.id=b.lab ORDER BY start')]})
         elif self.path in ('/', '/index.html'):
             raw = (ROOT / 'web' / 'index.html').read_bytes()
@@ -434,6 +499,8 @@ class Handler(BaseHTTPRequestHandler):
                             school.update_summary(db,data)
                         else:
                             school.upload_branding(db,data)
+                elif self.path == '/api/admin/closures':
+                    manage_closure(data)
                 elif self.path == '/api/admin/users':
                     manage_user(data,user)
                 elif self.path == '/api/admin/create-user':
@@ -492,6 +559,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError('Password attuale non valida.')
                 manage_user({'id':user['id'],'action':'password','password':password},user)
                 self.reply(200, {'ok':True},self.cookie('',0))
+            elif self.path == '/api/bookings/edit':
+                self.reply(200, {'id': edit_own_booking(data, user)})
             elif self.path == '/api/bookings':
                 if 'hours' in data:
                     self.reply(201, {'ids': book_many(data, user)})
