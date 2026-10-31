@@ -27,6 +27,21 @@ class SchoolTests(unittest.TestCase):
     def upload(self,filename,content,cookie=None):
         return self.request('/api/admin/regulation-file',dict(filename=filename,content=base64.b64encode(content).decode()),cookie)
 
+    def test_original_branding_is_available_without_admin_upload(self):
+        for kind,filename in [('header','school-header.jpg'),('logo','school-logo.png')]:
+            result=self.request('/api/branding/'+kind,cookie='')
+            self.assertEqual(result['status'],200)
+            self.assertEqual(result['body'],(app.ROOT/'web'/'assets'/filename).read_bytes())
+
+    def test_upgrade_seeds_missing_image_without_overwriting_custom_image(self):
+        custom=b'custom image already uploaded by administrator'
+        with app.connect() as db:
+            db.execute("UPDATE school_assets SET content=? WHERE kind='logo'",(custom,))
+            db.execute("DELETE FROM school_assets WHERE kind='header'")
+        app.init()
+        self.assertEqual(self.request('/api/branding/logo',cookie='')['body'],custom)
+        self.assertEqual(self.request('/api/branding/header',cookie='')['body'],(app.ROOT/'web'/'assets'/'school-header.jpg').read_bytes())
+
     def test_original_download_and_chapter_index(self):
         self.assertEqual(self.request('/api/regulations',cookie='')['status'],401)
         self.assertEqual(self.request('/api/regulations/download',cookie='')['status'],401)

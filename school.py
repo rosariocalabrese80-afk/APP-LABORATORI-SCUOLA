@@ -26,6 +26,12 @@ def initialize(db, root):
         CREATE TABLE IF NOT EXISTS school_assets(
           kind TEXT PRIMARY KEY, mime TEXT NOT NULL, content BLOB NOT NULL);
     ''')
+    for kind, filename, mime in (
+            ('header', 'school-header.jpg', 'image/jpeg'),
+            ('logo', 'school-logo.png', 'image/png')):
+        if not db.execute('SELECT 1 FROM school_assets WHERE kind=?', (kind,)).fetchone():
+            content = (root / 'web' / 'assets' / filename).read_bytes()
+            db.execute('INSERT INTO school_assets VALUES(?,?,?)', (kind, mime, content))
     if not db.execute('SELECT 1 FROM regulation_document').fetchone():
         db.execute('INSERT INTO regulation_document VALUES(1,?,?,?,?,?)', (
             'REGOLAMENTO LABORATORI(1).docx',

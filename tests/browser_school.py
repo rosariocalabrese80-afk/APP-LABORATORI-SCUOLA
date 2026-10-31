@@ -23,7 +23,10 @@ with tempfile.TemporaryDirectory() as temporary:
    page=browser.new_page(viewport={'width':1280,'height':900});errors=[]
    page.on('pageerror',lambda e:errors.append(str(e)))
    base='http://127.0.0.1:'+str(server.server_port)
-   page.goto(base);assert page.locator('#schoolHeading h1').inner_text()=='Laboratori IC2 Giovanni Paolo II di Policoro'
+   page.goto(base)
+   page.locator('#schoolLetterhead').wait_for(state='visible')
+   page.wait_for_function("document.getElementById('schoolLetterhead').naturalWidth>0")
+   assert page.locator('#schoolHeading h1').inner_text()=='Laboratori IC2 Giovanni Paolo II di Policoro'
    assert page.locator('#schoolHeading p').inner_text()=='Pianifica le attività e prenota il laboratorio.'
    page.locator('#username').fill('admin@example.com');page.locator('#password').fill('abcdef');page.get_by_role('button',name='Accedi',exact=True).click()
    page.locator('#workspace').wait_for(state='visible')
