@@ -153,3 +153,11 @@ La prova opzionale `python3 tests/browser_registration_notifications.py` verific
 Il calendario settimanale mantiene tutti e sette i giorni, con colonne più compatte per sabato e domenica e spazio dedicato ai cinque giorni prenotabili. Sui tablet il calendario occupa l’intera larghezza disponibile, sotto il riquadro di stampa; sui telefoni si scorre soltanto la griglia. Le schede delle prenotazioni mandano a capo i testi lunghi senza troncarli.
 
 I report usano l’immagine **intestazione** corrente conservata nel database, comprese le sostituzioni caricate dall’amministratore. JPEG, PNG e WebP vengono preparati per la stampa senza alterare le proporzioni. Se un’immagine caricata non è decodificabile viene usata l’intestazione originale del progetto. I dati delle prenotazioni non vengono trasformati in maiuscolo: maiuscole e grassetti distinguono solo titoli, date ed etichette.
+
+## Ripristino delle selezioni a ogni accesso
+
+Dopo **Esci** e al nuovo accesso l’interfaccia riparte dalla pagina **Prenotazioni e agenda**, con data corrente della scuola, tutti i laboratori nell’agenda, filtri personali disattivati, modulo di prenotazione vuoto, nessuna modifica in corso, calendario settimanale sul giorno corrente, stampa giornaliera generale e menu chiusi. Vengono azzerati anche ricerche, selezioni delle chiusure, moduli amministrativi, file selezionati, messaggi e finestre aperte. Le password e i dati temporanei della precedente sessione non rimangono nei moduli.
+
+Il ripristino riguarda soltanto l’interfaccia: non elimina account, prenotazioni, chiusure o altri dati salvati. Durante la stessa sessione, i normali filtri e le scelte si conservano passando tra le sezioni. Il cambio password e la scadenza della sessione riportano anch’essi all’accesso con le selezioni iniziali.
+
+La prova opzionale `python3 tests/browser_session_defaults.py` verifica logout, nuovo accesso dello stesso utente, cambio utente, scadenza, cambio di giorno a scheda aperta, azzeramento di moduli e file selezionati e conservazione dei dati salvati.
