@@ -69,6 +69,11 @@ def init():
                 db.execute(f'ALTER TABLE users ADD COLUMN {column} {definition}')
         if 'active' not in {r['name'] for r in db.execute('PRAGMA table_info(labs)')}:
             db.execute('ALTER TABLE labs ADD COLUMN active INTEGER NOT NULL DEFAULT 1')
+        lab_columns = {r['name'] for r in db.execute('PRAGMA table_info(labs)')}
+        if 'suspended' not in lab_columns:
+            db.execute('ALTER TABLE labs ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0')
+        if 'suspension_message' not in lab_columns:
+            db.execute("ALTER TABLE labs ADD COLUMN suspension_message TEXT NOT NULL DEFAULT ''")
         db.execute('CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT NOT NULL)')
         if not db.execute("SELECT 1 FROM settings WHERE key='catalog_seeded'").fetchone():
             db.executemany('INSERT OR IGNORE INTO labs(name) VALUES(?)', [(name,) for name in LABS])
@@ -100,8 +105,11 @@ def _book(db, data, user, booking_id=None):
     if not today() <= start.date() <= month_shift(today(), 1):
         raise ValueError('Puoi prenotare da oggi fino a un mese di calendario in avanti.')
     start, end = start.isoformat(timespec='minutes'), end.isoformat(timespec='minutes')
-    if not db.execute('SELECT id FROM labs WHERE id=? AND active=1', (lab,)).fetchone():
+    laboratory = db.execute('SELECT * FROM labs WHERE id=? AND active=1', (lab,)).fetchone()
+    if not laboratory:
         raise ValueError('Laboratorio inesistente.')
+    if laboratory['suspended']:
+        raise ValueError('Laboratorio temporaneamente sospeso. ' + laboratory['suspension_message'])
     if db.execute('SELECT id FROM bookings WHERE lab=? AND start<? AND end>? AND id!=?', (lab, end, start, booking_id or -1)).fetchone():
         raise ValueError('Il laboratorio è già prenotato in questo intervallo.')
     if booking_id is not None:
@@ -445,6 +453,18 @@ class Handler(BaseHTTPRequestHandler):
                             db.execute('UPDATE labs SET name=? WHERE id=?',(name,int(data['id'])))
                         elif action=='toggle':
                             db.execute('UPDATE labs SET active=1-active WHERE id=?',(int(data['id']),))
+                        elif action=='suspend':
+                            notice = data.get('message')
+                            if not isinstance(notice,str) or not 1 <= len(notice.strip()) <= 1000:
+                                raise ValueError('Inserisci una comunicazione agli utenti da 1 a 1000 caratteri.')
+                            cursor = db.execute('UPDATE labs SET suspended=1,suspension_message=? WHERE id=? AND active=1',
+                                                (notice.strip(),int(data['id'])))
+                            if not cursor.rowcount:
+                                raise ValueError('Laboratorio inesistente o disattivato.')
+                        elif action=='resume':
+                            cursor = db.execute("UPDATE labs SET suspended=0,suspension_message='' WHERE id=?",(int(data['id']),))
+                            if not cursor.rowcount:
+                                raise ValueError('Laboratorio inesistente.')
                         else:
                             raise ValueError('Azione laboratorio non valida.')
                 elif self.path == '/api/admin/bookings':

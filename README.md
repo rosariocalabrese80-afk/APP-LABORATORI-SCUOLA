@@ -98,3 +98,13 @@ La suite standard include i test di documenti, versionamento, permessi, integrit
 ## Ordine della schermata principale
 
 Dopo l’accesso, la prima area operativa è **Prenotazioni e agenda**, con il modulo di prenotazione e l’elenco. Anche per gli amministratori questo blocco precede il pannello amministrativo; amministrazione e cambio password seguono più in basso. Nessun riquadro o download del regolamento compare dentro Prenotazioni e agenda: indice e documento completo si trovano soltanto nella sezione Regolamenti, raggiungibile dal pulsante nella navigazione principale.
+
+## Sospensione temporanea di un laboratorio
+
+In **Amministrazione → Gestisci laboratori**, **Sospendi temporaneamente** apre una finestra con il campo obbligatorio **Comunicazione agli utenti** (massimo 1000 caratteri). L’amministratore inserisce il motivo e conferma. Il laboratorio resta nell’elenco dei docenti, contrassegnato come temporaneamente sospeso. Alla selezione nel modulo di prenotazione, l’app ricontrolla lo stato corrente sul server e mostra un pop-up con il testo esatto della comunicazione; il messaggio resta leggibile anche nel modulo. Le ore e il salvataggio sono disabilitati.
+
+La protezione è applicata anche dal server: se la sospensione viene impostata mentre un docente sta compilando una prenotazione, il salvataggio viene rifiutato senza creare record parziali e il modulo recupera il messaggio aggiornato. Il blocco vale anche per le nuove prenotazioni amministrative e per la modifica di quelle esistenti. Le prenotazioni già registrate restano visibili e non vengono cancellate automaticamente; l’amministratore può gestirne l’annullamento separatamente.
+
+**Modifica comunicazione** aggiorna il motivo. **Termina sospensione** riapre le prenotazioni e rimuove il messaggio. La sospensione non ha una scadenza automatica e rimane fino alla riattivazione manuale. La disattivazione ordinaria rimane distinta: nasconde il laboratorio dal modulo. Stato e messaggio della sospensione sono conservati nel database e inclusi nel backup.
+
+I test standard verificano persistenza, messaggi, permessi, conservazione delle prenotazioni e riattivazione. La prova opzionale `python3 tests/browser_suspension.py` usa due sessioni browser indipendenti, amministratore e docente, comprese una sospensione durante la compilazione e la vista mobile.
